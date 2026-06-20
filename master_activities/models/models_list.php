@@ -1,0 +1,87 @@
+<?php
+global $conn;
+include("../../includes/auth.php");
+include("../../config/db.php");
+include("../../includes/header.php");
+include("../../includes/sidebar.php");
+?>
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Asset Models List</h2>
+        <a href="<?= ROUTE_MODELS_ADD ?>" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Add Model
+        </a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Model Name</th>
+                            <th>Category</th>
+                            <th>Vendor</th>
+                            <th class="text-center">Total Assets</th>
+                            <th>Last Purchase</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php
+                        $query = "SELECT m.*, c.category_name, v.vendor_name, 
+                                  COUNT(a.asset_id) as total_assets,
+                                  MAX(a.purchase_date) as last_purchase
+                                  FROM asset_models m
+                                  LEFT JOIN asset_categories c ON m.category_id = c.category_id
+                                  LEFT JOIN vendors v ON m.vendor_id = v.vendor_id
+                                  LEFT JOIN assets a ON m.model_id = a.model_id
+                                  GROUP BY m.model_id
+                                  ORDER BY m.model_id DESC";
+                        $result = mysqli_query($conn, $query);
+
+                        if(mysqli_num_rows($result) > 0):
+                            while ($row = mysqli_fetch_assoc($result)):
+                        ?>
+                            <tr>
+                                <td><?= $row['model_id'] ?></td>
+                                <td class="fw-bold">
+                                    <a href="models_details.php?id=<?= $row['model_id'] ?>" class="text-decoration-none">
+                                        <?= htmlspecialchars($row['model_name']) ?>
+                                    </a>
+                                </td>
+                                <td><?= htmlspecialchars($row['category_name']) ?></td>
+                                <td><?= htmlspecialchars($row['vendor_name']) ?></td>
+                                <td class="text-center">
+                                    <span class="badge bg-info text-dark"><?= $row['total_assets'] ?></span>
+                                </td>
+                                <td>
+                                    <?= $row['last_purchase'] ? date('d M Y', strtotime($row['last_purchase'])) : '<span class="text-muted small">N/A</span>' ?>
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="models_details.php?id=<?= $row['model_id'] ?>" class="btn btn-info">View</a>
+                                        <a href="<?= ROUTE_MODELS_EDIT ?>?id=<?= $row['model_id'] ?>" class="btn btn-warning">Edit</a>
+                                        <a href="<?= ROUTE_MODELS_DELETE ?>?id=<?= $row['model_id'] ?>"
+                                           onclick="return confirm('Delete this model?')" class="btn btn-danger">Delete</a>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php 
+                            endwhile;
+                        else:
+                        ?>
+                            <tr>
+                                <td colspan="7" class="text-center py-4 text-muted">No models found.</td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<?php include("../../includes/footer.php"); ?>
